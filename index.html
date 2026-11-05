@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lexa AI</title>
+    <style>
+        :root { --bg-color: #ffffff; --surface-color: #f0f4f9; --surface-hover: #e4eef9; --text-color: #1f1f1f; --text-secondary: #444746; --accent-color: #0b57d0; --border-color: #c4c7c5; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Google Sans', Roboto, Helvetica, Arial, sans-serif; }
+        html, body { width: 100vw; height: 100vh; overflow: hidden; background-color: var(--bg-color); color: var(--text-color); display: flex; position: fixed; top: 0; left: 0; }
+        main { flex-grow: 1; height: 100vh; display: flex; flex-direction: column; background-color: var(--bg-color); position: relative; overflow: hidden; }
+        header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background-color: var(--bg-color); flex-shrink: 0; border-bottom: 1px solid var(--border-color); }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 1.2rem; font-weight: 500; color: var(--text-secondary); }
+        .menu-btn { background: none; border: none; cursor: pointer; font-size: 1.5rem; color: var(--text-secondary); padding: 8px; border-radius: 50%; }
+        .menu-btn:hover { background-color: var(--surface-hover); }
+        .dropdown-menu { display: none; position: absolute; left: 20px; top: 64px; background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); list-style: none; width: 260px; z-index: 1000; overflow: hidden; padding: 8px 0; }
+        .dropdown-menu li { padding: 12px 16px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; color: var(--text-color); }
+        .dropdown-menu li:hover, .dropdown-menu li.active { background-color: var(--surface-hover); color: var(--accent-color); }
+        .dropdown-divider { height: 1px; background-color: var(--border-color); margin: 6px 0; }
+        .dropdown-header { font-size: 0.85rem; font-weight: bold; color: var(--text-secondary); padding: 6px 16px; }
+        .content-panel { flex-grow: 1; padding: 16px 20px; overflow-y: auto; display: none; flex-direction: column; max-width: 800px; width: 100%; margin: 0 auto; }
+        .content-panel.active { display: flex; }
+        .chat-messages { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 10px 0; }
+        .message { padding: 16px; border-radius: 16px; line-height: 1.6; max-width: 85%; }
+        .message.user { background-color: var(--surface-color); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background-color: var(--bg-color); color: var(--text-color); align-self: flex-start; border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
+        .chat-input-wrapper { padding: 10px 0; background-color: var(--bg-color); flex-shrink: 0; }
+        .chat-input-container { display: flex; flex-direction: column; background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 24px; padding: 12px 16px; }
+        .chat-input-container:focus-within { box-shadow: 0 1px 6px rgba(32,33,36,0.28); border-color: transparent; background-color: #fff; }
+        .chat-input-container textarea { width: 100%; background: none; border: none; color: var(--text-color); font-size: 1rem; outline: none; resize: none; min-height: 40px; max-height: 120px; }
+        .chat-input-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .chat-tools-left, .chat-tools-right { display: flex; align-items: center; gap: 6px; }
+        .model-select { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 10px; border-radius: 12px; font-size: 0.85rem; outline: none; cursor: pointer; }
+        .icon-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; padding: 6px; border-radius: 50%; }
+        .icon-btn:hover { background-color: var(--surface-hover); }
+        .send-btn { background-color: var(--accent-color); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; }
+        .panel-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .panel-card h3 { margin-bottom: 14px; color: var(--accent-color); }
+        select, input[type="text"], input[type="number"] { width: 100%; padding: 12px; background-color: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 8px; margin-top: 6px; margin-bottom: 14px; outline: none; }
+        button.action-btn { background-color: var(--accent-color); color: white; border: none; padding: 12px 24px; border-radius: 20px; font-weight: 500; cursor: pointer; }
+        .flashcard { background-color: var(--surface-hover); border: 2px dashed var(--accent-color); border-radius: 16px; height: 200px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; cursor: pointer; font-size: 1.1rem; margin-top: 15px; }
+        #slapModal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .slap-content { background: white; padding: 30px; border-radius: 16px; text-align: center; max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <div class="header-left">
+                <button class="menu-btn" onclick="toggleDropdown()">☰</button>
+                <div class="header-title" id="pageTitle">Lexa AI</div>
+            </div>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li id="opt-chatTab" class="active" onclick="switchTab('chatTab', this)">💬 Chat & Image</li>
+                <li id="opt-imageGenTab" onclick="switchTab('imageGenTab', this)">🖼️ Image Generation Studio</li>
+                <li id="opt-quizTab" onclick="switchTab('quizTab', this)">🧠 Quiz Escape</li>
+                <li id="opt-robotTab" onclick="switchTab('robotTab', this)">🤖 Robotic Assist</li>
+                <li id="opt-flashTab" onclick="switchTab('flashTab', this)">🎴 Flash Cards</li>
+                <div class="dropdown-divider"></div>
+                <li onclick="triggerShareImageMenu()">🔗 Share App / Current Image</li>
+                <li onclick="triggerSignIn()">🔑 Sign In / Account</li>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-header">Saved Search History</div>
+                <li onclick="loadHistoryItem('Flutter UI layout components')">⭐ Flutter UI layout</li>
+                <li onclick="loadHistoryItem('Python sorting algorithm explanation')">⭐ Python sorting</li>
+                <li onclick="loadHistoryItem('ESP32 ultrasonic sensor setup')">⭐ ESP32 sensor setup</li>
+            </ul>
+        </header>
+        <div id="chatTab" class="content-panel active">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">Hello! I am Lexa AI. Ask any doubt or use voice command below! Source: Gemini Auto.</div>
+            </div>
+            <div class="chat-input-wrapper">
+                <div class="chat-input-container">
+                    <textarea id="chatInput" placeholder="Ask your doubt here..." rows="1" onkeypress="handleKey(event)"></textarea>
+                    <div class="chat-input-actions">
+                        <div class="chat-tools-left">
+                            <select id="modelSelector" class="model-select">
+                                <option value="Lexa 1.5 Flash">Lexa 1.5 Flash</option>
+                                <option value="Lexa 1.5 Pro">Lexa 1.5 Pro</option>
+                                <option value="Lexa Ultra">Lexa Ultra</option>
+                            </select>
+                            <button class="icon-btn" title="Voice Command" onclick="startVoiceCommand()">🎙️</button>
+                        </div>
+                        <div class="chat-tools-right">
+                            <button class="send-btn" title="Send Prompt" onclick="sendMessage()">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="imageGenTab" class="content-panel">
+            <div class="panel-card">
+                <h3>Lexa Image Generation Studio</h3>
+                <label>Enter image prompt description:</label>
+                <input type="text" id="imagePromptInput" placeholder="e.g., A cute golden retriever dog">
+                <button class="action-btn" onclick="validateAndGenerateImage()">Generate Image</button>
+            </div>
+            <div class="panel-card" id="imageOutputCard" style="display:none; text-align: center;">
+                <h3>Generated Result</h3>
+                <div id="imageResultBox" style="width:100%; min-height:240px; background:#e4eef9; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 10px; border: 2px dashed #0b57d0; gap: 10px;">
+                    <img id="generatedImageElement" src="" alt="Generated AI Art" style="max-width:100%; max-height:280px; border-radius:8px; display:none;" />
+                    <span id="imageCaptionText" style="color:#0b57d0; font-weight:500;">Generated successfully!</span>
+                </div>
+            </div>
+        </div>
+        <div id="quizTab" class="content-panel">
+            <div class="panel-card">
+                <h3>Quiz Escape Setup</h3>
+                <label>Select Category:</label>
+                <select id="quizCategory"><option>General Science & Tech</option><option>Artificial Intelligence</option><option>Robotics & Hardware</option><option>Coding & Logic</option></select>
+                <label>Select Difficulty Level:</label>
+                <select id="quizLevel"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+                <label>Number of Questions:</label>
+                <input type="number" id="quizCount" value="5" min="1" max="20">
+                <button class="action-btn" onclick="generateQuiz()">Generate Quiz</button>
+            </div>
+            <div class="panel-card" id="quizContainer" style="display:none;">
+                <h3 id="quizTitle"></h3>
+                <p id="quizQuestion" style="margin-bottom: 15px; font-size: 1.05rem;"></p>
+                <div id="quizOptions" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+        </div>
+        <div id="robotTab" class="content-panel">
+            <div class="panel-card">
+                <h3>Robotic Assist & Code Generator</h3>
+                <label>Enter project type or problem statement:</label>
+                <input type="text" id="robotPrompt" placeholder="e.g., Obstacle avoiding robot using ultrasonic sensor">
+                <button class="action-btn" onclick="generateRobotAssist()">Get Project Ideas & Code</button>
+            </div>
+            <div class="panel-card" id="robotOutputCard" style="display:none;">
+                <h3>AI Recommendations & Code</h3>
+                <pre id="robotOutputText" style="white-space: pre-wrap; font-family: monospace; color: var(--accent-color);"></pre>
+            </div>
+        </div>
+        <div id="flashTab" class="content-panel">
+            <div class="panel-card">
+                <h3>Flash Card Problem Solver</h3>
+                <p>Test your problem-solving capability. Click the card to flip between the challenge and the solution.</p>
+                <div class="flashcard" id="flashcardElement" onclick="flipCard()">
+                    <span id="flashcardText">Challenge Problem: Optimize a searching algorithm to run under O(log n) time complexity.</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="slapModal"><div class="slap-content"><div style="font-size: 40px; margin-bottom: 10px;">🖐️</div><h3 style="color: #d93025; margin-bottom: 10px;">Bad Prompt Detected!</h3><p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 20px;">This prompt contains inappropriate or restricted content. Image generation blocked!</p><button class="action-btn" onclick="closeSlapModal()" style="background: #d93025;">Dismiss</button></div></div>
+    <script>
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.dropdown-menu li').forEach(li => li.classList.remove('active'));
+            if (element) { element.classList.add('active'); document.getElementById('pageTitle').innerText = element.innerText.trim(); }
+            toggleDropdown();
+        }
+        function toggleDropdown() { const menu = document.getElementById('dropdownMenu'); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }
+        window.onclick = function(event) { if (!event.target.matches('.menu-btn')) { const menu = document.getElementById('dropdownMenu'); if (menu && menu.style.display === 'block') { menu.style.display = 'none'; } } }
+        function loadHistoryItem(query) { switchTab('chatTab', document.getElementById('opt-chatTab')); const input = document.getElementById('chatInput'); input.value = query; sendMessage(); }
+        function startVoiceCommand() { const input = document.getElementById('chatInput'); input.placeholder = "Listening... Speak your query..."; setTimeout(() => { input.value = "Explain quantum computing basics"; input.placeholder = "Ask your doubt here..."; sendMessage(); }, 2000); }
+        function triggerShareImageMenu() { alert("Sharing feature activated!"); toggleDropdown(); }
+        function triggerSignIn() { let user = prompt("Enter username:"); if(user) { alert("Signed in as " + user + "!"); } toggleDropdown(); }
+        function sendMessage() {
+            const input = document.getElementById('chatInput'); const text = input.value.trim(); const selectedModel = document.getElementById('modelSelector').value; if(!text) return;
+            const chatMessages = document.getElementById('chatMessages'); const userMsg = document.createElement('div'); userMsg.className = 'message user'; userMsg.innerText = text; chatMessages.appendChild(userMsg); input.value = ''; chatMessages.scrollTop = chatMessages.scrollHeight;
+            setTimeout(() => { const aiMsg = document.createElement('div'); aiMsg.className = 'message ai'; aiMsg.innerHTML = `<strong>Lexa AI (${selectedModel}):</strong><br><br>Resolution for <em>"${text}"</em>:<br>1. Core Concept: Structured planning.<br>2. Methodology: Modular design.<br>3. Source: Gemini Auto.`; chatMessages.appendChild(aiMsg); chatMessages.scrollTop = chatMessages.scrollHeight; }, 700);
+        }
+        async function validateAndGenerateImage() {
+            const promptInput = document.getElementById('imagePromptInput');
+            const prompt = promptInput.value.trim();
+            if(prompt === '') { document.getElementById('slapModal').style.display = 'flex'; return; }
+            const imgElement = document.getElementById('generatedImageElement');
+            const captionText = document.getElementById('imageCaptionText');
+            const outputCard = document.getElementById('imageOutputCard');
+            outputCard.style.display = 'block';
+            imgElement.style.display = 'none';
+            captionText.innerText = "Generating... Please wait...";
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                const data = await response.json();
+                if(data.error) throw new Error(data.error);
+                const base64Image = data.predictions[0].bytesBase64Encoded;
+                imgElement.src = `data:image/png;base64,${base64Image}`;
+                imgElement.style.display = 'block';
+                captionText.innerText = `Generated: "${prompt}"`;
+            } catch (error) {
+                captionText.innerText = "Error: " + error.message + " - Check Vercel env variable.";
+            }
+        }
+        function closeSlapModal() { document.getElementById('slapModal').style.display = 'none'; }
+        function handleKey(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+        function generateQuiz() {
+            const cat = document.getElementById('quizCategory').value; const level = document.getElementById('quizLevel').value; const count = document.getElementById('quizCount').value;
+            document.getElementById('quizContainer').style.display = 'block'; document.getElementById('quizTitle').innerText = `Quiz: ${cat} (${level}) - ${count} Qs`; document.getElementById('quizQuestion').innerText = "Q1: What is role of loss function?";
+            document.getElementById('quizOptions').innerHTML = `<button class="action-btn" style="background:var(--surface-hover); color:var(--text-color); text-align:left;" onclick="alert('Correct!')">A) Quantify error to guide optimization</button><button class="action-btn" style="background:var(--surface-hover); color:var(--text-color); text-align:left;" onclick="alert('Incorrect!')">B) Increase clock speed</button>`;
+        }
+        function generateRobotAssist() {
+            const prompt = document.getElementById('robotPrompt').value; if(!prompt) return;
+            document.getElementById('robotOutputCard').style.display = 'block';
+            document.getElementById('robotOutputText').innerText = `Project: "${prompt}"\n\n1. Architecture: ESP32 + WiFi\n2. Components: HC-SR04, L298N\n\nvoid setup() {\n  pinMode(trigPin, OUTPUT);\n}\nvoid loop() {\n  if(measureDistance() < 15) stopMotors();\n}`;
+        }
+        let isFlipped = false;
+        function flipCard() {
+            isFlipped = !isFlipped;
+            document.getElementById('flashcardText').innerText = isFlipped ? "Solution: Use Binary Search or Hash Map for O(log n)." : "Challenge: Optimize searching algorithm to O(log n).";
+        }
+    </script>
+</body>
+                  </html>
