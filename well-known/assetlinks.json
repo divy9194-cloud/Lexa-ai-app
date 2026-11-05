@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.lexa_ai_app_5hcc.twa",
+        "sha256_cert_fingerprints": ["4B:1C:AC:73:4C:17:36:55:08:08:36:A5:AB:B4:B9:5D:F1:30:38:67:3B:6E:A6:08:2C:5F:0B:0F:79:42:B5:0C"]
+      }
+    }]
